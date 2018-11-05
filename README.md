@@ -52,7 +52,7 @@ optional arguments:
 
 
 ### Enjoy ;-)
-- 使用有疑问, 请联系我: [isyuu](isyuu4reg@163.com)
+- 使用有疑问, 请联系我: <isyuu4reg@163.com>
 - 欢迎投喂: 
 
 ![感谢投喂](http://imglf6.nosdn0.126.net/img/aFNNQXFSeWVxNVMydnBDZ01NM0ltWFIwbkpqcFBvb2R6OFNhZEg4QW51dm9lUzBNYWpyb013PT0.jpg)
