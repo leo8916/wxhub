@@ -62,7 +62,6 @@ class FakesResp(BaseResp):
 class ArtisResp(BaseResp):
 
     def __init__(self, sjson):
-        print(sjson)
         super(ArtisResp, self).__init__(sjson) 
         self.list = self.data['app_msg_list'] if self.is_ok else []
         self.total = self.data['app_msg_cnt'] if self.is_ok else 0
