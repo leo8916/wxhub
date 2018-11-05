@@ -62,9 +62,10 @@ class FakesResp(BaseResp):
 class ArtisResp(BaseResp):
 
     def __init__(self, sjson):
-        super(ArtisResp, self).__init__(sjson)
-        self.list = self.data['app_msg_list']
-        self.total = self.data['app_msg_cnt']
+        print(sjson)
+        super(ArtisResp, self).__init__(sjson) 
+        self.list = self.data['app_msg_list'] if self.is_ok else []
+        self.total = self.data['app_msg_cnt'] if self.is_ok else 0
 
     @property
     def count(self):
@@ -103,11 +104,17 @@ def set_cookies(driver, cookies):
 
 
 def download(url, sname):    
-    result = requests.get(url, headers=Session.headers)
-    with open(sname, 'wb') as f:
-        f.write(result.content)
-        f.flush()
-        f.close()
+    for i in range(0, 3):
+        result = requests.get(url, headers=Session.headers, stream=True)
+        if result.status_code == 200:
+            with open(sname, 'wb') as f:
+                for chunk in result.iter_content(1024):
+                    f.write(chunk)
+            return True
+        else:
+            continue
+    print(f"Error download:{url}")
+    return False
     
 def pipe_fakes(fake_name):
     begin = 0
@@ -131,6 +138,7 @@ def pipe_fakes(fake_name):
 def pipe_articles(fakeid, query=''):
     begin = 0
     pagesize = 5
+    cnt = 0
     while(True):
         rep = requests.get(Urls.query_arti.format(token=Session.token, fakeid=fakeid, begin=begin, count=pagesize, query=query), cookies=Session.cookies, headers=Session.headers)
         artis = ArtisResp(rep.text)
@@ -138,13 +146,17 @@ def pipe_articles(fakeid, query=''):
             break
         for it in artis.list:
             link = it['link']
+            cnt += 1
             if link in Input.arti_cache:
                 continue
             print(f"{it['title']} --> {link}")
             pipe_crawl_articles(it)
             append_arti_cache(link)
+            # time.sleep(0.3)
         begin += artis.count
         continue
+
+    print(f"{cnt} articles processed!")
 
 def crawl_all_images(url, sdir, url_cache):
     pat = re.compile(r'src="(https://.*?)"')
@@ -196,7 +208,7 @@ def process_input():
         
     uc = os.path.join('url.cache.list')
     if os.path.isfile(uc):
-        with open(ac, 'rt') as fi:
+        with open(uc, 'rt') as fi:
             line = fi.readline()
             while line:
                 Input.url_cache[line.strip()] = True
@@ -221,6 +233,14 @@ def append_url_cache(urls):
                 continue
             myfile.write(f"{url}\n") 
             Input.url_cache[url] = True
+
+
+def repipe():
+    process_input()
+    i = 0
+    for k, v in Input.url_cache.items():
+        download(k, os.path.join('output', f"{i}.jpg"))
+        i += 1
 
 def main(chrome):
     #会过期, 重新登录后需要重新取得
@@ -247,6 +267,7 @@ def main(chrome):
     pipe()
 
 if __name__ == '__main__':
+    # repipe()
     description = u"公众号文章全搞定"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-biz', dest='biz', type=str, help='必填:公众号名字', required=True)
