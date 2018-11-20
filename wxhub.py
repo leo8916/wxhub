@@ -149,8 +149,8 @@ def pipe_articles(fakeid, query=''):
             if link in Input.arti_cache:
                 continue
             print(f"{it['title']} --> {link}")
-            pipe_crawl_articles(it)
-            append_arti_cache(link)
+            if pipe_crawl_articles(it):
+                append_arti_cache(link)
             # time.sleep(0.3)
         begin += artis.count
         continue
@@ -172,16 +172,43 @@ def crawl_all_images(url, sdir, url_cache):
             urls.append(m)
             idx += 1
         append_url_cache(urls)
+        return True
     except:
         print(f"failed crawl images from url:{url}")
+        return False
 
+def crawl_baidu_pan_link(url, sdir, url_cache):
+    pat = re.compile(r'链接:(https://pan\.baidu\.com/.*?)提取码:(....)')
+    try:
+        urls = []
+        rep = requests.get(url, cookies=Session.cookies, headers=Session.headers)
+        html = rep.text
+        mats = pat.findall(html, pos=0)
+        if not mats:
+            return False
+        with open("baidu.pan.links.txt", "a") as myfile:
+            for uus in mats:
+                uu = uus[0]
+                if not uu or uu in Input.url_cache:
+                    continue
+                pwd = uus[1]
+                myfile.write(f"{uu} => {pwd}\n") 
+                Input.url_cache[uu] = True
+                urls.append(uu)
+        append_url_cache(urls)
+        return True
+    except:
+        print(f"failed crawl images from url:{url}")
+        return False
 
 def pipe_crawl_articles(arti_info):
     sdir = os.path.join(Input.out_dir, Input.fake_name, arti_info['title'])
     if not os.path.exists(sdir):
         os.makedirs(sdir, exist_ok=True)
     if Input.crawl_method == 'all_images':
-        crawl_all_images(arti_info['link'], sdir, Input.url_cache)
+        return crawl_all_images(arti_info['link'], sdir, Input.url_cache)
+    elif 'baidu_pan_links':
+        return crawl_baidu_pan_link(arti_info['link'], sdir, Input.url_cache)
 
 
 def pipe():
@@ -265,14 +292,18 @@ def main(chrome):
     process_input()
     pipe()
 
+
 if __name__ == '__main__':
-    # repipe()
+    # test()
+
     description = u"公众号文章全搞定"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-biz', dest='biz', type=str, help='必填:公众号名字', required=True)
     parser.add_argument('-chrome', dest='chrome', type=str, help='可选:web chrome 路径, 默认使用脚本同级目录下的chromedriver')
     parser.add_argument('-arti', dest='arti', type=str, help='可选:文章名字, 默认处理全部文章')
+    parser.add_argument('-method', dest='method', type=str, help='可选, 处理方法:  all_images, baidu_pan_links')
 
     args = parser.parse_args()
     Input.fake_name = args.biz
+    Input.crawl_method = args.method if args.method else 'all_images'
     main(args.chrome)
