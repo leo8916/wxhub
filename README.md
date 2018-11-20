@@ -1,6 +1,9 @@
 ## 公众号文章抓取工具
 使用公众号文章编辑链接的方案, 突破搜狗方案10条的限制~~~ ;-)
 
+### 2018.11
+- 新增公众号内, 百度网络链接和密码的抓取. (指定method为baidu_pan_links)
+
 
 ### 准备
 - 首先你需要有一个 [微信公众号, 注册很简单](https://mp.weixin.qq.com)
@@ -30,7 +33,7 @@ wxhub/
 ### 使用
 ```
 (py3) isyuu:wxhub isyuu$ python wxhub.py -h
-usage: wxhub.py [-h] -biz BIZ [-chrome CHROME] [-arti ARTI]
+usage: wxhub.py [-h] -biz BIZ [-chrome CHROME] [-arti ARTI] [-method METHOD]
 
 公众号文章全搞定
 
@@ -39,6 +42,7 @@ optional arguments:
   -biz BIZ        必填:公众号名字
   -chrome CHROME  可选:web chrome 路径, 默认使用脚本同级目录下的chromedriver
   -arti ARTI      可选:文章名字, 默认处理全部文章
+  -method METHOD  可选, 处理方法: all_images, baidu_pan_links
 
 ```
 
