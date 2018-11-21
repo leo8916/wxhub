@@ -8,7 +8,7 @@
 ### 准备
 - 首先你需要有一个 [微信公众号, 注册很简单](https://mp.weixin.qq.com)
 - python 3.6
-- [下载web chrome](http://chromedriver.chromium.org/home) 在第一次登陆时, 需要使用其手动登录. 
+- [下载ChromeDriver](http://chromedriver.chromium.org/home) 在第一次登陆时, 需要使用其手动登录. 
 - 安装依赖
 
 ```
