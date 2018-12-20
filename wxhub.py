@@ -16,7 +16,8 @@ class Input:
     out_dir = "output"
     '''
     all_images
-    dump_urls
+    baidu_pan_links
+    whole_page
     '''
     crawl_method = "all_images"
     url_cache = {}
@@ -201,15 +202,33 @@ def crawl_baidu_pan_link(url, sdir, url_cache):
         print(f"failed crawl images from url:{url}")
         return False
 
+def crawl_whole_page(url, sdir, url_cache):
+    try:
+        rep = requests.get(url, cookies=Session.cookies, headers=Session.headers)
+        if rep.status_code != 200:
+            return False
+        html = rep.text
+        os.makedirs(sdir, exist_ok=True)
+        with open(os.path.join(sdir, 'index.html'), "w") as f:
+            f.write(html)
+            f.flush()
+        return crawl_all_images(url, sdir, Input.url_cache)
+    except:
+        print(f"failed crawl images from url:{url}")
+        return False
+
+
 def pipe_crawl_articles(arti_info):
-    sdir = os.path.join(Input.out_dir, Input.fake_name, arti_info['title'])
+    title_4_dir = arti_info['title'].replace(':', '_').replace(' ', '_').replace(':', '_')
+    sdir = os.path.join(Input.out_dir, Input.fake_name, title_4_dir)
     if not os.path.exists(sdir):
         os.makedirs(sdir, exist_ok=True)
     if Input.crawl_method == 'all_images':
         return crawl_all_images(arti_info['link'], sdir, Input.url_cache)
-    elif 'baidu_pan_links':
+    elif Input.crawl_method == 'baidu_pan_links':
         return crawl_baidu_pan_link(arti_info['link'], sdir, Input.url_cache)
-
+    elif Input.crawl_method == 'whole_page':
+        return crawl_whole_page(arti_info['link'], sdir, Input.url_cache)
 
 def pipe():
     '''query fakes '''
@@ -293,15 +312,20 @@ def main(chrome):
     pipe()
 
 
-if __name__ == '__main__':
-    # test()
+def test():
+    Input.fake_name = '程序猿'
+    Input.crawl_method = 'whole_page'
+    main(None)
 
+if __name__ == '__main__':
+    #test()
+   
     description = u"公众号文章全搞定"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-biz', dest='biz', type=str, help='必填:公众号名字', required=True)
     parser.add_argument('-chrome', dest='chrome', type=str, help='可选:web chrome 路径, 默认使用脚本同级目录下的chromedriver')
     parser.add_argument('-arti', dest='arti', type=str, help='可选:文章名字, 默认处理全部文章')
-    parser.add_argument('-method', dest='method', type=str, help='可选, 处理方法:  all_images, baidu_pan_links')
+    parser.add_argument('-method', dest='method', type=str, help='可选, 处理方法:  all_images, baidu_pan_links, whole_page')
 
     args = parser.parse_args()
     Input.fake_name = args.biz
