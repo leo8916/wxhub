@@ -219,7 +219,7 @@ def crawl_whole_page(url, sdir, url_cache):
 
 
 def pipe_crawl_articles(arti_info):
-    title_4_dir = arti_info['title'].replace(':', '_').replace(' ', '_').replace(':', '_')
+    title_4_dir = arti_info['title'].replace(':', '').replace(' ', '').replace(':', '').replace('/', '').replace('|', '').replace('<', '').replace('>', '').replace('?', '').replace('"', '')
     sdir = os.path.join(Input.out_dir, Input.fake_name, title_4_dir)
     if not os.path.exists(sdir):
         os.makedirs(sdir, exist_ok=True)
