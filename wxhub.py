@@ -180,7 +180,7 @@ def pipe_articles(fakeid, query=''):
                 break
             
             if total > last_total:#exsit new artis ...
-                mask = (total - last_total) * '0' + mask
+                mask = (total - last_total) * ['0'] + mask
         
         index = 0
         for it in artis.list:
@@ -381,7 +381,7 @@ def main(chrome):
 
 
 def test():
-    Input.fake_name = '影想'
+    Input.fake_name = '大J小D'
     Input.crawl_method = 'whole_page'
     main(None)
 
