@@ -386,16 +386,16 @@ def test():
     main(None)
 
 if __name__ == '__main__':
-    test()
+    # test()
    
-    # description = u"公众号文章全搞定"
-    # parser = argparse.ArgumentParser(description=description)
-    # parser.add_argument('-biz', dest='biz', type=str, help='必填:公众号名字', required=True)
-    # parser.add_argument('-chrome', dest='chrome', type=str, help='可选:web chrome 路径, 默认使用脚本同级目录下的chromedriver')
-    # parser.add_argument('-arti', dest='arti', type=str, help='可选:文章名字, 默认处理全部文章')
-    # parser.add_argument('-method', dest='method', type=str, help='可选, 处理方法:  all_images, baidu_pan_links, whole_page')
+    description = u"公众号文章全搞定"
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-biz', dest='biz', type=str, help='必填:公众号名字', required=True)
+    parser.add_argument('-chrome', dest='chrome', type=str, help='可选:web chrome 路径, 默认使用脚本同级目录下的chromedriver')
+    parser.add_argument('-arti', dest='arti', type=str, help='可选:文章名字, 默认处理全部文章')
+    parser.add_argument('-method', dest='method', type=str, help='可选, 处理方法:  all_images, baidu_pan_links, whole_page')
 
-    # args = parser.parse_args()
-    # Input.fake_name = args.biz
-    # Input.crawl_method = args.method if args.method else 'all_images'
-    # main(args.chrome)
+    args = parser.parse_args()
+    Input.fake_name = args.biz
+    Input.crawl_method = args.method if args.method else 'all_images'
+    main(args.chrome)
