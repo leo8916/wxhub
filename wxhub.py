@@ -10,6 +10,7 @@ import json
 import argparse
 import traceback
 import random
+import math
 
 class Input:
     fake_name = ""#"影想"
@@ -22,6 +23,7 @@ class Input:
     crawl_method = "all_images"
     url_cache = {}
     arti_cache = {}
+    page_sleep = 1
 
 class Session:
     token = ''
@@ -138,69 +140,70 @@ def pipe_fakes(fake_name):
             begin = begin + fakes.count
             continue
         return fakes.list[int(ic)]
-    
+
+
+
 def pipe_articles(fakeid, query=''):
+    TIME_SLEEP = Input.page_sleep
+
     todo = load_todo_list(Input.fake_name)
     if not todo:
         todo['data'] = {}
     data = todo['data']
     mask = list(todo['__mask'] if '__mask' in todo else '')
-    last_total = len(mask)
-    last_searched = sum(map(lambda x: 1 if x == '1' else 0, mask))
+    last_total = todo['__total_cnt'] if '__total_cnt' in todo else 0
 
     begin = 0
     pagesize = 5
     total = 0
-    while(True):
-        time.sleep(0.3)
-        if mask and total:
-            skip = True
-            for i in range(begin, len(mask)):
-                if mask[i] == '0':
-                    begin = int(i / pagesize) * pagesize
-                    skip = False
-                    break
-            if skip:
-                break
+    total_page = 0
+    last_total_page = math.ceil(last_total / pagesize)
 
-        rep = requests.get(Urls.query_arti.format(token=Session.token, fakeid=fakeid, begin=begin, count=pagesize, query=query), cookies=Session.cookies, headers=Session.headers)
-        artis = ArtisResp(rep.text)
-        if artis.ret :
-            print(f"调用搜索, 报错:{artis.ret} {artis.err_msg}")
-            break
+    rep = requests.get(Urls.query_arti.format(token=Session.token, fakeid=fakeid, begin=begin, count=pagesize, query=query), cookies=Session.cookies, headers=Session.headers)
+    artis = ArtisResp(rep.text)
+    if not artis.ret :
+        total = artis.total
+        total_page = math.ceil(total / pagesize)
 
-        if not total:
-            '''first loop'''
-            total = artis.total
-            print(f"正在获取全部链接, 共发现 {artis.total} 条文章, 需要翻页 {artis.total/pagesize + 1} 次, 请稍后 ...")
-            if not total:#no artis actualy...
-                break
-            
-            if total == last_searched: #unnecessary search in this time...
-                break
-            
-            if total > last_total:#exsit new artis ...
-                mask = (total - last_total) * ['0'] + mask
+        if total_page > last_total_page:
+            mask = (total_page - last_total_page) * ['0'] + mask
         
-        index = 0
-        for it in artis.list:
-            mask[begin + index] = '1'
-            index += 1
-            link = it['link']
-            if link in Input.arti_cache:
+        if artis.list[0]['link'] in data:
+            mask[0] = '0' #has new arti. reset first page.
+        print(f"正在获取全部链接, 共发现 {artis.total} 条文章, 需要翻页 {total_page} 次, 请稍后 ...")
+        # 当前页为0时必检查下一页..
+        for i in range(0, len(mask)):
+            if mask[i] == '1':
                 continue
-            if link in data:
-                continue
-            data[link] = it
-        begin += artis.count
-    
+            print(f"正在处理第{i}页...")
+            time.sleep(TIME_SLEEP)
+            rep = requests.get(Urls.query_arti.format(token=Session.token, fakeid=fakeid, begin=i * pagesize, count=pagesize, query=query), cookies=Session.cookies, headers=Session.headers)
+            artis = ArtisResp(rep.text)
+            if artis.ret :
+                break
+
+            flag = True
+            for it in artis.list:
+                link = it['link']
+                if link in data:
+                    continue
+                flag = False
+                data[link] = it
+            mask[i] = '1'
+            # force check next page.
+            if not flag and i < len(mask) - 1:
+                mask[i + 1] = '0' 
+    else:
+        print(f"调用搜索, 报错:{artis.ret} {artis.err_msg}")
+        
     curr_searched = sum(map(lambda x: 1 if x == '1' else 0, mask))
     # if not total:
     #     raise Exception('搜索不到文章, 或者接口被反爬, 请删除cookies.json文件 等几分钟再试, 或换个账号试试.')
-    print(f"本次搜索到{total}条文章, 新增{curr_searched - last_searched}, 共在 todo.list 中包含 {len(data)} 条文章链接 ...")
-
+    print(f"本次搜索到:{total_page} 页文章, 已处理:{curr_searched}页, 共在 todo.list 中包含 {len(data)} 条文章链接 ...")
+    todo['__total_cnt'] = total
     todo['__mask'] = ''.join(mask)
     save_todo_list(Input.fake_name, todo)
+
     cnt = 0
     for url, arti_info in data.items():
         if url in Input.arti_cache:
@@ -380,13 +383,13 @@ def main(chrome):
     pipe()
 
 
-def test():
-    Input.fake_name = '大J小D'
-    Input.crawl_method = 'whole_page'
-    main(None)
+# def test():
+#     Input.fake_name = '大J小D'
+#     Input.crawl_method = 'baidu_pan_links'
+#     main(None)
 
 if __name__ == '__main__':
-    # test()
+    test()
    
     description = u"公众号文章全搞定"
     parser = argparse.ArgumentParser(description=description)
@@ -394,8 +397,10 @@ if __name__ == '__main__':
     parser.add_argument('-chrome', dest='chrome', type=str, help='可选:web chrome 路径, 默认使用脚本同级目录下的chromedriver')
     parser.add_argument('-arti', dest='arti', type=str, help='可选:文章名字, 默认处理全部文章')
     parser.add_argument('-method', dest='method', type=str, help='可选, 处理方法:  all_images, baidu_pan_links, whole_page')
+    parser.add_argument('-sleep', dest='sleep', type=str, help='翻页休眠时间, 默认为1即 1秒每页.')
 
     args = parser.parse_args()
     Input.fake_name = args.biz
     Input.crawl_method = args.method if args.method else 'all_images'
+    Input.page_sleep = int(args.sleep) if args.sleep else 1
     main(args.chrome)
