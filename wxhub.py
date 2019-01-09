@@ -389,7 +389,7 @@ def main(chrome):
 #     main(None)
 
 if __name__ == '__main__':
-    test()
+    # test()
    
     description = u"公众号文章全搞定"
     parser = argparse.ArgumentParser(description=description)
