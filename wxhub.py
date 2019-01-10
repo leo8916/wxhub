@@ -19,11 +19,14 @@ class Input:
     all_images
     baidu_pan_links
     whole_page
+    pipe
     '''
     crawl_method = "all_images"
     url_cache = {}
     arti_cache = {}
     page_sleep = 1
+    args = {}
+    custom_pipe = []
 
 class Session:
     token = ''
@@ -236,7 +239,7 @@ def crawl_all_images(url, sdir, url_cache):
         return False
 
 def crawl_baidu_pan_link(url, sdir, url_cache):
-    pat = re.compile(r'链接:(https://pan\.baidu\.com/.*?)提取码:(....)')
+    pat = re.compile(r'链接\s*[:|：]\s*(https://pan\.baidu\.com/.*?)提取码\s*[:|：]\s*(....)')
     try:
         urls = []
         rep = requests.get(url, cookies=Session.cookies, headers=Session.headers)
@@ -274,7 +277,21 @@ def crawl_whole_page(url, sdir, url_cache):
         print(f"failed crawl images from url:{url}")
         return False
 
-
+def crawl_by_custom_pipe(url, sdir, url_cache):
+    if not Input.custom_pipe:
+        sps = (Input.args.pipe if Input.args.pipe else '').split(',')
+        for sp in sps:
+            Input.custom_pipe.append(__import__(sp.strip()))
+    
+    for p in Input.custom_pipe:
+        urls = p.crawl(url, sdir)
+        for url in urls:
+            url_cache[url] = True
+        return not not urls
+    
+    return False
+            
+    
 def pipe_crawl_articles(arti_info):
     title_4_dir = arti_info['title'].replace(':', '').replace(' ', '').replace(':', '').replace('/', '').replace('|', '').replace('<', '').replace('>', '').replace('?', '').replace('"', '')
     sdir = os.path.join(Input.out_dir, Input.fake_name, title_4_dir)
@@ -286,6 +303,8 @@ def pipe_crawl_articles(arti_info):
         return crawl_baidu_pan_link(arti_info['link'], sdir, Input.url_cache)
     elif Input.crawl_method == 'whole_page':
         return crawl_whole_page(arti_info['link'], sdir, Input.url_cache)
+    elif Input.crawl_method == 'pipe': 
+        return crawl_by_custom_pipe(arti_info['link'], sdir, Input.url_cache)
 
 def pipe():
     '''query fakes '''
@@ -398,9 +417,10 @@ if __name__ == '__main__':
     parser.add_argument('-arti', dest='arti', type=str, help='可选:文章名字, 默认处理全部文章')
     parser.add_argument('-method', dest='method', type=str, help='可选, 处理方法:  all_images, baidu_pan_links, whole_page')
     parser.add_argument('-sleep', dest='sleep', type=str, help='翻页休眠时间, 默认为1即 1秒每页.')
+    parser.add_argument('-pipe', dest='pipe', type=str, help='在method指定为pipe时, 该参数指定pipe处理流程. 例如:"pipe_example, pipe_example1, pipe_example2, pipe_example3"')
 
-    args = parser.parse_args()
-    Input.fake_name = args.biz
-    Input.crawl_method = args.method if args.method else 'all_images'
-    Input.page_sleep = int(args.sleep) if args.sleep else 1
-    main(args.chrome)
+    Input.args = parser.parse_args()
+    Input.fake_name = Input.args.biz
+    Input.crawl_method = Input.args.method if Input.args.method else 'all_images'
+    Input.page_sleep = int(Input.args.sleep) if Input.args.sleep else 1
+    main(Input.args.chrome)
