@@ -5,11 +5,18 @@
 - 新增公众号内, 百度网盘链接和密码的抓取. (指定method为baidu_pan_links)
 - 新增全部html页面抓取方法 -method whole_page
 - 添加todo.list 与 mask 变量
-
 ```
 todo.list 文件记录了公众号下所有文章的链接数据, 因为高频次调用文章搜索/翻页接口会导致被ban.
 所以目前的方案是使用mask记录所有索引处理记录, 保证了不会翻页相同位置, 提高了获取新增链接的几率.
 ```
+
+### 2019.01
+- 添加-pl参数, 用来限制每次公众号翻页数目, 每次翻页过多会被ban.建议10以内.
+	- N = 0: 不进行翻页, 只讲之前的url重新处理(todo.list) 
+	- N < 0: 不限制翻页(默认), 翻到底或者出错时停止.
+	- N > 0: 翻页N次.
+
+
 
 
 ### 准备
@@ -41,6 +48,7 @@ wxhub/
 ```
 (py3) isyuu:wxhub isyuu$ python wxhub.py -h
 usage: wxhub.py [-h] -biz BIZ [-chrome CHROME] [-arti ARTI] [-method METHOD]
+                [-sleep SLEEP] [-pipe PIPE] [-pl PAGE_LIMIT]
 
 公众号文章全搞定
 
@@ -49,7 +57,12 @@ optional arguments:
   -biz BIZ        必填:公众号名字
   -chrome CHROME  可选:web chrome 路径, 默认使用脚本同级目录下的chromedriver
   -arti ARTI      可选:文章名字, 默认处理全部文章
-  -method METHOD  可选, 处理方法: all_images, baidu_pan_links, 
+  -method METHOD  可选, 处理方法: all_images, baidu_pan_links, whole_page
+  -sleep SLEEP    翻页休眠时间, 默认为1即 1秒每页.
+  -pipe PIPE      在method指定为pipe时, 该参数指定pipe处理流程. 例如:"pipe_example,
+                  pipe_example1, pipe_example2, pipe_example3"
+  -pl PAGE_LIMIT  指定最大翻页次数, 每次同一个公众号, 翻页太多次会被ban, 0:不翻页 只处理todo.list, 默认<0:无限制
+                  >0:翻页次数
 
 ```
 

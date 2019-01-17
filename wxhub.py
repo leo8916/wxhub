@@ -11,6 +11,7 @@ import argparse
 import traceback
 import random
 import math
+import codecs
 
 class Input:
     fake_name = ""#"影想"
@@ -244,6 +245,8 @@ def crawl_all_images(url, sdir, url_cache):
         return True
     except:
         print(f"failed crawl images from url:{url}")
+        sg = traceback.format_exc()
+        print(sg)
         return False
 
 def crawl_baidu_pan_link(url, sdir, url_cache):
@@ -267,7 +270,9 @@ def crawl_baidu_pan_link(url, sdir, url_cache):
         append_url_cache(urls)
         return True
     except:
-        print(f"failed crawl images from url:{url}")
+        print(f"failed crawl linkss from url:{url}")
+        sg = traceback.format_exc()
+        print(sg)
         return False
 
 def crawl_whole_page(url, sdir, url_cache):
@@ -277,12 +282,14 @@ def crawl_whole_page(url, sdir, url_cache):
             return False
         html = rep.text
         os.makedirs(sdir, exist_ok=True)
-        with open(os.path.join(sdir, 'index.html'), "w") as f:
+        with codecs.open(os.path.join(sdir, 'index.html'), "w", 'utf-8') as f:
             f.write(html)
             f.flush()
         return crawl_all_images(url, sdir, Input.url_cache)
     except:
-        print(f"failed crawl images from url:{url}")
+        print(f"failed crawl page from url:{url}")
+        sg = traceback.format_exc()
+        print(sg)
         return False
 
 def crawl_by_custom_pipe(url, sdir, url_cache):
