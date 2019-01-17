@@ -25,6 +25,7 @@ class Input:
     url_cache = {}
     arti_cache = {}
     page_sleep = 1
+    page_limit = -1
     args = {}
     custom_pipe = []
 
@@ -161,10 +162,11 @@ def pipe_articles(fakeid, query=''):
     total = 0
     total_page = 0
     last_total_page = math.ceil(last_total / pagesize)
+    page_limit = Input.page_limit
 
     rep = requests.get(Urls.query_arti.format(token=Session.token, fakeid=fakeid, begin=begin, count=pagesize, query=query), cookies=Session.cookies, headers=Session.headers)
     artis = ArtisResp(rep.text)
-    if not artis.ret :
+    if not artis.ret and page_limit:
         total = artis.total
         total_page = math.ceil(total / pagesize)
 
@@ -176,6 +178,9 @@ def pipe_articles(fakeid, query=''):
         print(f"正在获取全部链接, 共发现 {artis.total} 条文章, 需要翻页 {total_page} 次, 请稍后 ...")
         # 当前页为0时必检查下一页..
         for i in range(0, len(mask)):
+            if not page_limit:
+                break
+
             if mask[i] == '1':
                 continue
             print(f"正在处理第{i}页...")
@@ -196,6 +201,9 @@ def pipe_articles(fakeid, query=''):
             # force check next page.
             if not flag and i < len(mask) - 1:
                 mask[i + 1] = '0' 
+
+            #count check limit
+            page_limit -= 1
     else:
         print(f"调用搜索, 报错:{artis.ret} {artis.err_msg}")
         
@@ -418,9 +426,11 @@ if __name__ == '__main__':
     parser.add_argument('-method', dest='method', type=str, help='可选, 处理方法:  all_images, baidu_pan_links, whole_page')
     parser.add_argument('-sleep', dest='sleep', type=str, help='翻页休眠时间, 默认为1即 1秒每页.')
     parser.add_argument('-pipe', dest='pipe', type=str, help='在method指定为pipe时, 该参数指定pipe处理流程. 例如:"pipe_example, pipe_example1, pipe_example2, pipe_example3"')
+    parser.add_argument('-pl', dest='page_limit', type=str, help='指定最大翻页次数, 每次同一个公众号, 翻页太多次会被ban, 0:不翻页 只处理todo.list, 默认<0:无限制 >0:翻页次数')
 
     Input.args = parser.parse_args()
     Input.fake_name = Input.args.biz
     Input.crawl_method = Input.args.method if Input.args.method else 'all_images'
     Input.page_sleep = int(Input.args.sleep) if Input.args.sleep else 1
+    Input.page_limit = int(Input.args.page_limit) if Input.args.page_limit else -1
     main(Input.args.chrome)
