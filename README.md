@@ -49,7 +49,7 @@ optional arguments:
   -biz BIZ        必填:公众号名字
   -chrome CHROME  可选:web chrome 路径, 默认使用脚本同级目录下的chromedriver
   -arti ARTI      可选:文章名字, 默认处理全部文章
-  -method METHOD  可选, 处理方法: all_images, baidu_pan_links
+  -method METHOD  可选, 处理方法: all_images, baidu_pan_links, 
 
 ```
 
@@ -66,9 +66,5 @@ optional arguments:
 - 提示"搜索过于频繁"问题, 这可能是又有微信对搜索接口存在反爬机制; 目前解决的方案是:删除cookies.json, 换账号登录, 或者等几个小时即可.(未来准备尝试先缓存所有链接再逐条爬取的方式...)
 
 
-
-### Enjoy ;-)
-- 使用有疑问, 请联系我: <isyuu4reg@163.com>
-- 欢迎投喂: 
 
 
