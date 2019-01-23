@@ -83,7 +83,6 @@ class ArtisResp(BaseResp):
         return len(self.list)
 
 
-
 def execute_times(driver, times):
     for i in range(times + 1):
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -229,6 +228,7 @@ def pipe_articles(fakeid, query=''):
 
 def crawl_all_images(url, sdir, url_cache):
     pat = re.compile(r'src="(https://.*?)"')
+    pat2 = re.compile(r'wx_fmt=(.*)')
     urls = []
     try:
         rep = requests.get(url, cookies=Session.cookies, headers=Session.headers)
@@ -238,7 +238,14 @@ def crawl_all_images(url, sdir, url_cache):
         for m in mats:
             if m in url_cache:
                 continue
-            download(m, os.path.join(sdir, f"{idx}.jpg"))
+                
+            pps = pat2.findall(m)
+            if pps:
+                postfix = pps[0]
+            else:
+                postfix = 'jpg'
+
+            download(m, os.path.join(sdir, f"{idx}.{postfix}"))
             urls.append(m)
             idx += 1
         append_url_cache(urls)
@@ -384,13 +391,6 @@ def save_todo_list(key, dic):
     fn = os.path.join('output', key, "todo.list")
     os.makedirs(os.path.dirname(fn), exist_ok=True)
     open(fn, 'wb').write(json.dumps(dic).encode('utf-8'))
-
-def repipe():
-    process_input()
-    i = 0
-    for k, v in Input.url_cache.items():
-        download(k, os.path.join('output', f"{i}.jpg"))
-        i += 1
 
 def main(chrome):
     #会过期, 重新登录后需要重新取得
