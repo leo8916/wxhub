@@ -139,7 +139,15 @@ def pipe_fakes(fake_name):
             print(f"{i}) {it['nickname']}")
             i = i + 1
         
-        ic = input("choose index or next page(n):") 
+        while(True):
+            ic = input("输入数字, 选择序号;或者输入n翻页:") 
+            try:
+                if ic == 'n' or int(ic) >= 0 and int(ic) < len(fakes.list):
+                    break
+            except ValueError:
+                print("输入错误, 请重新输入!")
+            continue
+
         if ic == 'n' or ic == 'N':
             begin = begin + fakes.count
             continue
