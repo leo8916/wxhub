@@ -234,13 +234,26 @@ def pipe_articles(fakeid, query=''):
 
     print(f" 本次共处理了 {cnt} 条文章链接!")
 
-def crawl_all_images(url, sdir, url_cache):
+def verfy_arti_content(html):
+    if not html:
+        return False, "从服务器获取失败"
+    pat = re.compile(r'<div class="page_msg')
+    if not pat.search(html):
+        return True, ""
+    pat = re.compile(r'<div class="global_error_msg.*?">(.*?)</div', re.MULTILINE| re.DOTALL)
+    ms = pat.findall(html)
+    if ms:
+        return False, ms[0].strip()
+    return False, "服务器返回未知错误"
+
+def crawl_all_images(url, sdir, url_cache, html=None):
     pat = re.compile(r'src="(https://.*?)"')
     pat2 = re.compile(r'wx_fmt=(.*)')
     urls = []
     try:
-        rep = requests.get(url, cookies=Session.cookies, headers=Session.headers)
-        html = rep.text
+        if not html:
+            rep = requests.get(url, cookies=Session.cookies, headers=Session.headers)
+            html = rep.text
         mats = pat.findall(html, pos=0)
         idx = 0
         for m in mats:
@@ -296,11 +309,15 @@ def crawl_whole_page(url, sdir, url_cache):
         if rep.status_code != 200:
             return False
         html = rep.text
+        valid, msg = verfy_arti_content(html)
+        if not valid:
+            raise Exception(f"保存网页失败: {msg}")
+        
         os.makedirs(sdir, exist_ok=True)
         with codecs.open(os.path.join(sdir, 'index.html'), "w", 'utf-8') as f:
             f.write(html)
             f.flush()
-        return crawl_all_images(url, sdir, Input.url_cache)
+        return crawl_all_images(url, sdir, Input.url_cache, html=html)
     except:
         print(f"failed crawl page from url:{url}")
         sg = traceback.format_exc()
